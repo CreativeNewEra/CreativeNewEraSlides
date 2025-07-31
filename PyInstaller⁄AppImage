@@ -1,0 +1,6 @@
+pip install pyinstaller
+pyinstaller --noconfirm \
+    --onefile \
+    --add-data "ui/main_window.ui:ui" \
+    --add-data "resources/:resources" \
+    main.py
