@@ -38,9 +38,18 @@ sys.modules.setdefault("diffusers", fake_diffusers)
 # Stub PyQt5 for SettingsManager
 pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")
-qtcore.QSettings = type(
-    "QSettings", (), {"__init__": lambda self, *a, **k: None, "value": lambda self, k, d=None: d, "setValue": lambda self, k, v: None}
-)
+
+class FakeQSettings:
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def value(self, key, default=None):
+        return default
+
+    def setValue(self, key, value):
+        pass
+
+qtcore.QSettings = FakeQSettings
 sys.modules.setdefault("PyQt5", pyqt5)
 sys.modules.setdefault("PyQt5.QtCore", qtcore)
 
