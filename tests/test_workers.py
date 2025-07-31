@@ -30,7 +30,7 @@ class QImage:
 pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")
 qtcore.QThread = QThread
-qtcore.pyqtSignal = lambda *a, **k: object()
+qtcore.pyqtSignal = DummySignal
 qtgui = types.ModuleType("PyQt5.QtGui")
 qtgui.QImage = QImage
 sys.modules["PyQt5"] = pyqt5
