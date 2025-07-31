@@ -3,7 +3,7 @@ PyQt5==5.15.13
 diffusers==0.19.5
 torch==2.0.1
 transformers==4.34.0
-accelerate==0.22.0
+accelerate==1.9.0
 
 # CLI video tool (if you wrap it via Python)
 # wan2.2==<your-package-version>
