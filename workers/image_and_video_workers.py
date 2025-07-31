@@ -39,14 +39,26 @@ class ImageWorker(QThread):
             from utils.model_manager import ModelManager  # Ensure ModelManager exists in this module
             pipe = ModelManager.get_flux_pipeline(self.params)
 
-            # Generate image
+            # Generate image with progress callback
+            total_steps = self.params['steps']
+            self.progress.emit(0)
+
+            def _callback(step, timestep, latents):
+                if total_steps > 0:
+                    pct = min(100, int((step + 1) / total_steps * 100))
+                else:
+                    pct = 0  # Default to 0% if total_steps is invalid
+                self.progress.emit(pct)
+
             out = pipe(
                 prompt=self.prompt,
                 negative_prompt=self.neg_prompt or None,
                 width=self.params['width'],
                 height=self.params['height'],
-                num_inference_steps=self.params['steps'],
+                num_inference_steps=total_steps,
                 guidance_scale=self.params['guidance'],
+                callback=_callback,
+                callback_steps=1,
             )
             if not self._running:
                 return
