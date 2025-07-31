@@ -1,7 +1,7 @@
 import sys
 import torch
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
 
 from ui.main_window import Ui_MainWindow
@@ -51,9 +51,10 @@ class MainController:
         # Video generation
         self.ui.video_button.clicked.connect(self.start_video_generation)
 
-    def start_image_generation(self):
+    def start_image_generation(self) -> None:
+        """Gather UI inputs and launch a worker thread to generate an image."""
         prompt = self.ui.prompt_edit.toPlainText().strip()
-        neg    = self.ui.neg_prompt_edit.toPlainText().strip()
+        neg = self.ui.neg_prompt_edit.toPlainText().strip()
         params = {
             'width': self.ui.width_spin.value(),
             'height': self.ui.height_spin.value(),
@@ -74,20 +75,26 @@ class MainController:
 
         self.ui.status_bar.showMessage("Generating image...")
 
-    def _on_image_result(self, qimg):
+    def _on_image_result(self, qimg: QImage) -> None:
+        """Display the generated image in the UI.
+
+        Parameters:
+            qimg: Image produced by the worker.
+        """
         pixmap = QPixmap.fromImage(qimg)
         self.ui.image_display.setPixmap(
             pixmap.scaled(
                 self.ui.image_display.size(),
                 Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
+                Qt.SmoothTransformation,
             )
         )
         self.ui.status_bar.showMessage("Image generation complete")
 
-    def start_video_generation(self):
+    def start_video_generation(self) -> None:
+        """Gather UI inputs and launch a worker thread to generate a video."""
         prompt = self.ui.video_prompt_edit.toPlainText().strip()
-        neg    = self.ui.video_neg_prompt_edit.toPlainText().strip()
+        neg = self.ui.video_neg_prompt_edit.toPlainText().strip()
         params = {
             'width': self.ui.video_width_spin.value(),
             'height': self.ui.video_height_spin.value(),
@@ -106,10 +113,16 @@ class MainController:
 
         self.ui.status_bar.showMessage("Generating video...")
 
-    def _on_video_finished(self, path: str):
+    def _on_video_finished(self, path: str) -> None:
+        """Inform the user of the output video location."""
         self.ui.status_bar.showMessage(f"Video saved to {path}")
 
-    def _handle_error(self, msg: str):
+    def _handle_error(self, msg: str) -> None:
+        """Display an error message in the status bar.
+
+        Parameters:
+            msg: Description of the error.
+        """
         # Display errors in status bar (could be extended to dialogs)
         self.ui.status_bar.showMessage(msg)
 
