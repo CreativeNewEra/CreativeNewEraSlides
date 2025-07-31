@@ -1,6 +1,6 @@
 # Core
 PyQt5==5.15.13
-diffusers==0.19.5
+diffusers==0.34.0
 torch==2.0.1
 transformers==4.34.0
 accelerate==0.22.0
