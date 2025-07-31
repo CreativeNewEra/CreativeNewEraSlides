@@ -120,23 +120,22 @@ class VideoWorker(QThread):
                 cmd.append('--t5_cpu')
             cmd += ['--precision', self.params.get('precision', 'fp16')]
 
-            # Launch process
-            proc = subprocess.Popen(
+            # Launch process and ensure it closes properly
+            with subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-            )
-            # Parse stdout for progress updates
-            for line in proc.stdout:
-                if not self._running:
-                    proc.kill()
-                    return
-                # expect lines like "Progress: 42%"
-                if 'Progress:' in line:
-                    try:
-                        pct = int(line.split('Progress:')[1].strip().rstrip('%'))
-                        self.progress.emit(pct)
-                    except:
-                        pass
-            proc.wait()
+            ) as proc:
+                # Parse stdout for progress updates
+                for line in proc.stdout:
+                    if not self._running:
+                        proc.kill()
+                        return
+                    # expect lines like "Progress: 42%"
+                    if 'Progress:' in line:
+                        try:
+                            pct = int(line.split('Progress:')[1].strip().rstrip('%'))
+                            self.progress.emit(pct)
+                        except ValueError:
+                            print(f"Unexpected progress line: {line.strip()}")
             if proc.returncode != 0:
                 raise RuntimeError(f"Wan2.2 failed with code {proc.returncode}")
 
