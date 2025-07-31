@@ -21,7 +21,8 @@ FluxWanApp/
 ├── workers/
 │   └── image_and_video_workers.py  # Background threads
 ├── utils/
-│   ├── settings_and_model_manager.py  # QSettings + model caching
+│   ├── settings_manager.py    # QSettings wrapper
+│   ├── model_manager.py       # Model caching helpers
 │   └── errors.py              # Friendly error parsing
 ├── controllers/
 │   └── main_controller.py     # Wire UI ↔ workers
@@ -60,17 +61,17 @@ FluxWanApp/
    ```bash
    # No interactive prompt yet—edit in Qt settings or use QSettings directly
    # e.g.,
-   python3 - <<EOF
+   python3 - <<'EOF'
+from utils.settings_manager import SettingsManager
+s = SettingsManager()
+s.set_model_path('flux', '/path/to/stable-diffusion')
+EOF
    ```
-
-from utils.settings\_and\_model\_manager import SettingsManager s = SettingsManager() s.set\_model\_path('flux', '/path/to/stable-diffusion') EOF
-
-````
 
 4. **Run the app**
 ```bash
 python3 main.py
-````
+```
 
 ## 🐳 Docker
 

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt
 
 from ui.main_window import Ui_MainWindow
-from utils.settings_and_model_manager import SettingsManager
+from utils.settings_manager import SettingsManager
 from workers.image_and_video_workers import ImageWorker, VideoWorker
 
 
