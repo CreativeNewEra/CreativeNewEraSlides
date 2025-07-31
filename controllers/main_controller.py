@@ -24,9 +24,12 @@ class MainController:
         self._populate_device_list()
         self._bind_signals()
 
-        # Show window and start event loop
+        # Show window; event loop is started via run()
         self.window.show()
-        sys.exit(self.app.exec_())
+
+    def run(self):
+        """Start the Qt event loop and return the exit code."""
+        return self.app.exec_()
 
     def _populate_device_list(self):
         # Detect available devices
@@ -112,4 +115,4 @@ class MainController:
 
 
 if __name__ == '__main__':
-    MainController()
+    MainController().run()
