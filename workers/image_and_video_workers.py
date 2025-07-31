@@ -74,8 +74,10 @@ class ImageWorker(QThread):
             # Ensure GPU memory is freed
             try:
                 torch.cuda.empty_cache()
-            except:
-                pass
+            except (AttributeError, RuntimeError) as exc:
+                from utils.errors import parse_error
+                msg = parse_error(exc)
+                print(msg)
 
     def stop(self):
         """
