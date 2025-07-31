@@ -30,6 +30,7 @@ FluxWanApp/
 ├── requirements.txt           # Python deps
 ├── Dockerfile                 # Container instructions
 ├── .github/workflows/ci.yml   # CI pipeline
+├── tests/                     # Unit tests
 └── README.md
 ```
 
