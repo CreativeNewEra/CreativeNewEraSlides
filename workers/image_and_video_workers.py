@@ -36,7 +36,7 @@ class ImageWorker(QThread):
     def run(self):
         try:
             # Load or reuse cached pipeline
-            from utils.settings_and_model_manager import ModelManager
+            from utils.settings_and_model_manager import ModelManager  # Ensure ModelManager exists in this module
             pipe = ModelManager.get_flux_pipeline(self.params)
 
             # Generate image
