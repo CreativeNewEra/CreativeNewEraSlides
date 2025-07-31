@@ -1,0 +1,32 @@
+# Version control files
+.git
+.gitignore
+.github
+
+# Tests
+tests/
+
+# Documentation
+docs/
+*.md
+
+# Local configuration
+.env
+*.env
+*.local
+.vscode/
+
+# Dependencies and build outputs
+node_modules/
+build/
+dist/
+*.egg-info/
+env/
+.venv/
+PyInstaller*/
+__pycache__/
+*.py[cod]
+
+# Miscellaneous
+*.log
+*.png
