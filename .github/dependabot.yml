@@ -1,0 +1,19 @@
+version: 2
+
+# Dependabot helps keep your dependencies up to date and secure by
+# automatically creating pull requests for outdated or vulnerable
+# packages. Here we configure it to monitor both
+# Python and GitHub Actions dependencies.
+updates:
+  # Monitor Python dependencies defined in requirements.txt
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  # Monitor GitHub Actions used in this repository
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

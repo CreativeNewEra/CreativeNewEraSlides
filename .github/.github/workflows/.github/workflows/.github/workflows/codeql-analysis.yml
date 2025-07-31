@@ -1,0 +1,41 @@
+name: CodeQL
+
+# This workflow configures GitHub's CodeQL static analysis to run on
+# every push to `main`, on pull requests targeting `main`, and on a
+# weekly schedule.  CodeQL analyzes your Python code to find
+# security vulnerabilities and other potential issues.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 1 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: python
+
+      # If your project needs a custom build, remove the 'autobuild' step
+      # and instead run the commands necessary to build your code.
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          output: sarif
+          upload: true
