@@ -86,7 +86,7 @@ class MainController:
             pixmap.scaled(
                 self.ui.image_display.size(),
                 Qt.KeepAspectRatio,
-                Qt.SmoothTransformation,
+                Qt.SmoothTransformation
             )
         )
         self.ui.status_bar.showMessage("Image generation complete")
