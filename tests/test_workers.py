@@ -58,10 +58,11 @@ class DummyImage:
     mode = "RGBA"
     width = 1
     height = 1
+    MINIMAL_IMAGE_DATA = b"00"  # Represents minimal image data for testing purposes
     def convert(self, mode):
         return self
     def tobytes(self, *args):
-        return b"00"
+        return self.MINIMAL_IMAGE_DATA
 
 pil = types.ModuleType("PIL")
 image_mod = types.ModuleType("PIL.Image")
