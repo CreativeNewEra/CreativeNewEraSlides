@@ -28,8 +28,8 @@ class MainController:
         self.window.show()
 
     def run(self):
-        """Start the Qt event loop."""
-        self.app.exec_()
+        """Start the Qt event loop and return the exit code."""
+        return self.app.exec_()
 
     def _populate_device_list(self):
         # Detect available devices
