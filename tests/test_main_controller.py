@@ -317,7 +317,7 @@ class DummyVideoWorker:
         import subprocess
 
         cmd = [
-            "wan2.2",
+            DEFAULT_COMMAND,
             "--prompt",
             self.prompt,
             "--width",
