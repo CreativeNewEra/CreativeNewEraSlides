@@ -31,7 +31,7 @@ class ImageWorker(QThread):
     QThread worker to run Flux image generation without blocking UI.
     """
 
-    progress = pyqtSignal()  # emits percentage progress
+    progress = pyqtSignal(int)  # emits percentage progress
     result = pyqtSignal()  # emits final image
     error = pyqtSignal()  # emits error message
 
