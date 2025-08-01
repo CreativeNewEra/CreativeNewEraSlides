@@ -1,0 +1,28 @@
+[project]
+name = "creative-new-era-slides"
+version = "0.1.0"
+description = "Creative New Era Slides"
+readme = "readme.md"
+requires-python = ">=3.8"
+dependencies = [
+    "PyQt5==5.15.13",
+    "diffusers==0.34.0",
+    "torch==2.0.1",
+    "transformers==4.34.0",
+    "accelerate==1.9.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["controllers", "utils", "workers", "ui"]
+
+[tool.black]
+line-length = 88
+target-version = ["py38"]
+
+[tool.flake8]
+max-line-length = 88
+extend-ignore = ["E203", "W503"]
+
+[tool.mypy]
+python_version = "3.8"
+ignore_missing_imports = true
