@@ -2,7 +2,9 @@ import logging
 import os
 import subprocess
 from dataclasses import asdict
-from PyQt5.QtCore import QThread, pyqtSignal
+from typing import Optional
+
+from PyQt5.QtCore import QThread, pyqtSignal, QObject
 from PyQt5.QtGui import QImage
 import torch
 
@@ -14,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def pil_to_qimage(pil_image: Image.Image) -> QImage:
-    """
-    Convert PIL Image to QImage for Qt display.
-    """
+    """Convert a PIL Image to a :class:`QImage` for Qt display."""
     if pil_image.mode != "RGBA":
         pil_image = pil_image.convert("RGBA")
     data = pil_image.tobytes("raw", "RGBA")
@@ -30,9 +30,7 @@ def pil_to_qimage(pil_image: Image.Image) -> QImage:
 
 
 class ImageWorker(QThread):
-    """
-    QThread worker to run Flux image generation without blocking UI.
-    """
+    """Run Flux image generation in a thread to keep the UI responsive."""
 
     progress = pyqtSignal(int)  # emits percentage progress
     result = pyqtSignal(QImage)  # emits final image
@@ -43,15 +41,24 @@ class ImageWorker(QThread):
         prompt: str,
         neg_prompt: str,
         params: ImageParams,
-        parent=None,
-    ):
+        parent: Optional[QObject] = None,
+    ) -> None:
+        """Initialize the worker.
+
+        Parameters:
+            prompt: Text prompt for the model.
+            neg_prompt: Negative prompt used to avoid undesired content.
+            params: Image generation parameters.
+            parent: Optional QObject to set as the thread parent.
+        """
         super().__init__(parent)
         self.prompt = prompt
         self.neg_prompt = neg_prompt
         self.params = params
         self._running = True
 
-    def run(self):
+    def run(self) -> None:
+        """Execute image generation and emit progress and result signals."""
         try:
             # Load or reuse cached pipeline
             from utils.model_manager import (
@@ -105,17 +112,13 @@ class ImageWorker(QThread):
                 msg = parse_error(exc)
                 logger.warning(msg)
 
-    def stop(self):
-        """
-        Signal the thread to stop early.
-        """
+    def stop(self) -> None:
+        """Signal the thread to stop early."""
         self._running = False
 
 
 class VideoWorker(QThread):
-    """
-    QThread worker to run Wan2.2 video generation via CLI.
-    """
+    """Run Wan2.2 video generation via CLI in a background thread."""
 
     progress = pyqtSignal(int)
     finished = pyqtSignal(str)  # emits output file path
@@ -126,15 +129,24 @@ class VideoWorker(QThread):
         prompt: str,
         neg_prompt: str,
         params: VideoParams,
-        parent=None,
-    ):
+        parent: Optional[QObject] = None,
+    ) -> None:
+        """Initialize the worker.
+
+        Parameters:
+            prompt: Text prompt for the model.
+            neg_prompt: Negative prompt used to avoid undesired content.
+            params: Video generation parameters.
+            parent: Optional QObject to set as the thread parent.
+        """
         super().__init__(parent)
         self.prompt = prompt
         self.neg_prompt = neg_prompt
         self.params = params
         self._running = True
 
-    def run(self):
+    def run(self) -> None:
+        """Execute video generation using the Wan2.2 CLI and emit signals."""
         try:
             # Build CLI command
             cmd = [
@@ -196,5 +208,6 @@ class VideoWorker(QThread):
             logger.exception("Video generation failed: %s", msg)
             self.error.emit(msg)
 
-    def stop(self):
+    def stop(self) -> None:
+        """Signal the thread to stop early."""
         self._running = False
