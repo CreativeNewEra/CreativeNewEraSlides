@@ -112,7 +112,7 @@ class VideoWorker(QThread):
     QThread worker to run Wan2.2 video generation via CLI.
     """
 
-    progress = pyqtSignal()
+    progress = pyqtSignal(int)
     finished = pyqtSignal()  # emits output file path
     error = pyqtSignal()
 
