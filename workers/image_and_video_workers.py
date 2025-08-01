@@ -56,6 +56,8 @@ class ImageWorker(QThread):
             )  # Ensure ModelManager exists in this module
 
             pipe = ModelManager.get_flux_pipeline(self.params)
+            if self.params.get("quantized"):
+                logger.info("Using quantized weights for image generation")
 
             # Generate image with progress callback
             total_steps = self.params["steps"]
