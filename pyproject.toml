@@ -2,7 +2,7 @@
 name = "creative-new-era-slides"
 version = "0.1.0"
 description = "Creative New Era Slides"
-readme = "readme.md"
+readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
     "PyQt5==5.15.13",
