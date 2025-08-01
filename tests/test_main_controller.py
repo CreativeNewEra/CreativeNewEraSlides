@@ -145,9 +145,7 @@ class QImage:
 class QCloseEvent:
     pass
 
-
-builtins.QCloseEvent = QCloseEvent
-
+sys.modules["PyQt5.QtGui.QCloseEvent"] = QCloseEvent
 pyqt5 = types.ModuleType("PyQt5")
 qtwidgets = types.ModuleType("PyQt5.QtWidgets")
 qtcore = types.ModuleType("PyQt5.QtCore")
