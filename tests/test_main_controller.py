@@ -354,7 +354,8 @@ class DummyVideoWorker:
             if self._running:
                 if proc.returncode != 0:
                     raise RuntimeError(f"Wan2.2 failed with code {proc.returncode}")
-                out_file = os.path.abspath("output.mp4")
+                with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+                    out_file = temp_file.name
                 self.finished.emit(out_file)
         except Exception as e:
             self.error.emit(f"Runtime error: {e}")
