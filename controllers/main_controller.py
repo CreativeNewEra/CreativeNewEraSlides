@@ -13,6 +13,7 @@ class MainController:
     """
     Orchestrates the UI, settings, and worker threads.
     """
+
     def __init__(self):
         self.app = QApplication(sys.argv)
         self.window = QMainWindow()
@@ -56,15 +57,16 @@ class MainController:
         prompt = self.ui.prompt_edit.toPlainText().strip()
         neg = self.ui.neg_prompt_edit.toPlainText().strip()
         params = {
-            'width': self.ui.width_spin.value(),
-            'height': self.ui.height_spin.value(),
-            'steps': self.ui.steps_spin.value(),
-            'guidance': self.ui.guidance_spin.value(),
-            'model_path': self.settings.get_model_path('flux'),
-            'device': self.ui.device_combo.currentText(),
+            "width": self.ui.width_spin.value(),
+            "height": self.ui.height_spin.value(),
+            "steps": self.ui.steps_spin.value(),
+            "guidance": self.ui.guidance_spin.value(),
+            "model_path": self.settings.get_model_path("flux"),
+            "device": self.ui.device_combo.currentText(),
+            "quantized": self.ui.quant_checkbox.isChecked(),
         }
         # Persist chosen device
-        self.settings.set("device", params['device'])
+        self.settings.set("device", params["device"])
 
         # Start worker
         self.image_worker = ImageWorker(prompt, neg, params)
@@ -86,7 +88,7 @@ class MainController:
             pixmap.scaled(
                 self.ui.image_display.size(),
                 Qt.KeepAspectRatio,
-                Qt.SmoothTransformation
+                Qt.SmoothTransformation,
             )
         )
         self.ui.status_bar.showMessage("Image generation complete")
@@ -96,13 +98,13 @@ class MainController:
         prompt = self.ui.video_prompt_edit.toPlainText().strip()
         neg = self.ui.video_neg_prompt_edit.toPlainText().strip()
         params = {
-            'width': self.ui.video_width_spin.value(),
-            'height': self.ui.video_height_spin.value(),
-            'frames': self.ui.frames_spin.value(),
-            'steps': self.ui.video_steps_spin.value(),
-            'offload': self.ui.offload_checkbox.isChecked(),
-            't5_cpu': self.ui.t5_cpu_checkbox.isChecked(),
-            'precision': self.ui.precision_combo.currentText(),
+            "width": self.ui.video_width_spin.value(),
+            "height": self.ui.video_height_spin.value(),
+            "frames": self.ui.frames_spin.value(),
+            "steps": self.ui.video_steps_spin.value(),
+            "offload": self.ui.offload_checkbox.isChecked(),
+            "t5_cpu": self.ui.t5_cpu_checkbox.isChecked(),
+            "precision": self.ui.precision_combo.currentText(),
         }
 
         self.video_worker = VideoWorker(prompt, neg, params)
@@ -127,5 +129,5 @@ class MainController:
         self.ui.status_bar.showMessage(msg)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     MainController().run()

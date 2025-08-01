@@ -4,72 +4,90 @@ import pathlib
 import sys
 import types
 
+
 # ---- Stubs for PyQt5 ----
 class DummySignal:
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.emitted = []
+
     def connect(self, func):
         self._func = func
+
     def emit(self, value):
         self.emitted.append(value)
         if hasattr(self, "_func"):
             self._func(value)
 
+
 class QThread:
     def __init__(self, parent=None):
         self.parent = parent
 
+
 class QImage:
     Format_RGBA8888 = 0
+
     def __init__(self, data, width, height, fmt):
         self.data = data
         self.width = width
         self.height = height
         self.fmt = fmt
 
+
 pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")
-qtcore.QThread = QThread
-qtcore.pyqtSignal = DummySignal
+qtcore.QThread = QThread  # type: ignore[attr-defined]
+qtcore.pyqtSignal = DummySignal  # type: ignore[attr-defined]
 qtgui = types.ModuleType("PyQt5.QtGui")
-qtgui.QImage = QImage
+qtgui.QImage = QImage  # type: ignore[attr-defined]
 sys.modules["PyQt5"] = pyqt5
 sys.modules["PyQt5.QtCore"] = qtcore
 sys.modules["PyQt5.QtGui"] = qtgui
+
 
 # ---- Stub torch ----
 class DummyOOM(RuntimeError):
     pass
 
-def empty_cache():
-    empty_cache.called = True
 
-empty_cache.called = False
+def empty_cache():
+    empty_cache.called = True  # type: ignore[attr-defined]
+
+
+empty_cache.called = False  # type: ignore[attr-defined]
 
 fake_torch = types.SimpleNamespace(
     float16="float16",
     float32="float32",
-    cuda=types.SimpleNamespace(OutOfMemoryError=DummyOOM, empty_cache=empty_cache),
+    cuda=types.SimpleNamespace(
+        OutOfMemoryError=DummyOOM,
+        empty_cache=empty_cache,
+    ),
 )
-sys.modules["torch"] = fake_torch
+sys.modules["torch"] = fake_torch  # type: ignore[assignment]
+
 
 # ---- Stub PIL ----
 class DummyImage:
     mode = "RGBA"
     width = 1
     height = 1
-    MINIMAL_IMAGE_DATA = b"00"  # Represents minimal image data for testing purposes
+    MINIMAL_IMAGE_DATA = b"00"  # Minimal image data for tests
+
     def convert(self, mode):
         return self
+
     def tobytes(self, *args):
         return self.MINIMAL_IMAGE_DATA
 
+
 pil = types.ModuleType("PIL")
 image_mod = types.ModuleType("PIL.Image")
-image_mod.Image = DummyImage
-pil.Image = image_mod
+image_mod.Image = DummyImage  # type: ignore[attr-defined]
+pil.Image = image_mod  # type: ignore[attr-defined]
 sys.modules.setdefault("PIL", pil)
 sys.modules.setdefault("PIL.Image", image_mod)
+
 
 # ---- Stub utils.model_manager ----
 class FakePipeline:
@@ -81,15 +99,18 @@ class FakePipeline:
                 callback(i, None, None)
         return types.SimpleNamespace(images=[DummyImage()])
 
+
 fake_model_manager = types.ModuleType("utils.model_manager")
-fake_model_manager.ModelManager = types.SimpleNamespace(
-    get_flux_pipeline=lambda params: FakePipeline()
+# noqa: E501 is used here because the type-ignore comment makes the line long
+fake_model_manager.ModelManager = types.SimpleNamespace(  # type: ignore[attr-defined]  # noqa: E501
+    get_flux_pipeline=lambda params: FakePipeline(),
 )
 sys.modules["utils.model_manager"] = fake_model_manager
 
 # ---- Import workers module ----
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 workers = importlib.import_module("workers.image_and_video_workers")
+
 
 # ---- Tests for ImageWorker ----
 def test_image_worker_emits_progress_and_result():
@@ -106,13 +127,39 @@ def test_image_worker_emits_progress_and_result():
     assert empty_cache.called
 
 
+def test_image_worker_passes_quantized_flag():
+    captured_params = {}
+    fake_model_manager.ModelManager.get_flux_pipeline = (
+        lambda params: captured_params.update(params) or FakePipeline()
+    )
+    params = {
+        "width": 1,
+        "height": 1,
+        "steps": 1,
+        "guidance": 1,
+        "quantized": True,
+    }
+    worker = workers.ImageWorker("prompt", "", params)
+    worker.progress = DummySignal()
+    worker.result = DummySignal()
+    worker.error = DummySignal()
+    workers.ImageWorker.run(worker)
+    assert captured_params.get("quantized") is True
+
+
 def test_image_worker_emits_error_on_failure():
     class BadPipeline:
         def __call__(self, **kwargs):
             raise RuntimeError("boom")
 
-    fake_model_manager.ModelManager.get_flux_pipeline = lambda params: BadPipeline()
-    worker = workers.ImageWorker("p", "", {"width":1, "height":1, "steps":1, "guidance":1})
+    fake_model_manager.ModelManager.get_flux_pipeline = (
+        lambda params: BadPipeline()
+    )  # noqa: E501
+    worker = workers.ImageWorker(
+        "p",
+        "",
+        {"width": 1, "height": 1, "steps": 1, "guidance": 1},
+    )
     worker.progress = DummySignal()
     worker.result = DummySignal()
     worker.error = DummySignal()
@@ -120,33 +167,40 @@ def test_image_worker_emits_error_on_failure():
     assert worker.result.emitted == []
     assert worker.error.emitted and "Runtime error" in worker.error.emitted[0]
 
+
 # ---- Tests for VideoWorker ----
 def test_video_worker_builds_command_and_emits_progress(tmp_path):
     captured_cmd = []
+
     def fake_popen(cmd, stdout, stderr, text):
         captured_cmd.append(cmd)
+
         class Proc:
             returncode = 0
             stdout = ["Progress: 10%\n", "Progress: 100%\n"]
+
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 return False
+
             def kill(self):
                 pass
+
         return Proc()
 
     subprocess = importlib.import_module("subprocess")
     subprocess.Popen = fake_popen
 
     params = {
-        "width":1,
-        "height":1,
-        "frames":1,
-        "steps":1,
-        "offload":True,
-        "t5_cpu":True,
-        "precision":"fp16",
+        "width": 1,
+        "height": 1,
+        "frames": 1,
+        "steps": 1,
+        "offload": True,
+        "t5_cpu": True,
+        "precision": "fp16",
     }
     worker = workers.VideoWorker("hello", "", params)
     worker.progress = DummySignal()
