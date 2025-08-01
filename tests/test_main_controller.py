@@ -85,10 +85,10 @@ class QTextEdit:
         self.history = []
 
     def toPlainText(self):
-        self.history.append(self.text)
         return self.text
 
-
+    def trackHistory(self):
+        self.history.append(self.text)
 class QSpinBox:
     def __init__(self, value=0):
         self._value = value
