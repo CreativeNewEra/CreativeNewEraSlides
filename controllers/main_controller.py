@@ -11,11 +11,10 @@ from workers.params import ImageParams, VideoParams
 
 
 class MainController:
-    """
-    Orchestrates the UI, settings, and worker threads.
-    """
+    """Orchestrates the UI, settings, and worker threads."""
 
-    def __init__(self):
+    def __init__(self) -> None:
+        """Create the main window and prepare application state."""
         self.app = QApplication(sys.argv)
         self.window = QMainWindow()
         self.ui = Ui_MainWindow()
@@ -29,11 +28,12 @@ class MainController:
         # Show window; event loop is started via run()
         self.window.show()
 
-    def run(self):
+    def run(self) -> int:
         """Start the Qt event loop and return the exit code."""
         return self.app.exec_()
 
-    def _populate_device_list(self):
+    def _populate_device_list(self) -> None:
+        """Populate the device combo box with available CPU and GPU options."""
         # Detect available devices
         devices = ["cpu"]
         if torch.cuda.is_available():
@@ -47,14 +47,15 @@ class MainController:
         if last in devices:
             self.ui.device_combo.setCurrentText(last)
 
-    def _bind_signals(self):
+    def _bind_signals(self) -> None:
+        """Connect UI buttons to start image or video generation."""
         # Image generation
         self.ui.gen_button.clicked.connect(self.start_image_generation)
         # Video generation
         self.ui.video_button.clicked.connect(self.start_video_generation)
 
     def start_image_generation(self) -> None:
-        """Gather UI inputs and launch a worker thread to generate an image."""
+        """Collect UI prompts and parameters and launch image generation."""
         prompt = self.ui.prompt_edit.toPlainText().strip()
         neg = self.ui.neg_prompt_edit.toPlainText().strip()
         params = ImageParams(
@@ -95,7 +96,7 @@ class MainController:
         self.ui.status_bar.showMessage("Image generation complete")
 
     def start_video_generation(self) -> None:
-        """Gather UI inputs and launch a worker thread to generate a video."""
+        """Collect UI prompts and parameters and launch video generation."""
         prompt = self.ui.video_prompt_edit.toPlainText().strip()
         neg = self.ui.video_neg_prompt_edit.toPlainText().strip()
         params = VideoParams(
@@ -117,7 +118,11 @@ class MainController:
         self.ui.status_bar.showMessage("Generating video...")
 
     def _on_video_finished(self, path: str) -> None:
-        """Inform the user of the output video location."""
+        """Inform the user of the output video location.
+
+        Parameters:
+            path: Filesystem path where the video was saved.
+        """
         self.ui.status_bar.showMessage(f"Video saved to {path}")
 
     def _handle_error(self, msg: str) -> None:
