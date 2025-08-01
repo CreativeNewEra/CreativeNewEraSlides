@@ -1,11 +1,14 @@
 import logging
 import os
 import subprocess
+from dataclasses import asdict
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QImage
 import torch
 
 from PIL import Image
+
+from .params import ImageParams, VideoParams
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +42,7 @@ class ImageWorker(QThread):
         self,
         prompt: str,
         neg_prompt: str,
-        params: dict,
+        params: ImageParams,
         parent=None,
     ):
         super().__init__(parent)
@@ -55,12 +58,12 @@ class ImageWorker(QThread):
                 ModelManager,
             )  # Ensure ModelManager exists in this module
 
-            pipe = ModelManager.get_flux_pipeline(self.params)
-            if self.params.get("quantized", False):
+            pipe = ModelManager.get_flux_pipeline(asdict(self.params))
+            if self.params.quantized:
                 logger.info("Using quantized weights for image generation")
 
             # Generate image with progress callback
-            total_steps = self.params["steps"]
+            total_steps = self.params.steps
             self.progress.emit(0)
 
             def _callback(step, timestep, latents):
@@ -73,10 +76,10 @@ class ImageWorker(QThread):
             out = pipe(
                 prompt=self.prompt,
                 negative_prompt=self.neg_prompt or None,
-                width=self.params["width"],
-                height=self.params["height"],
+                width=self.params.width,
+                height=self.params.height,
                 num_inference_steps=total_steps,
-                guidance_scale=self.params["guidance"],
+                guidance_scale=self.params.guidance,
                 callback=_callback,
                 callback_steps=1,
             )
@@ -122,7 +125,7 @@ class VideoWorker(QThread):
         self,
         prompt: str,
         neg_prompt: str,
-        params: dict,
+        params: VideoParams,
         parent=None,
     ):
         super().__init__(parent)
@@ -139,21 +142,21 @@ class VideoWorker(QThread):
                 "--prompt",
                 self.prompt,
                 "--width",
-                str(self.params["width"]),
+                str(self.params.width),
                 "--height",
-                str(self.params["height"]),
+                str(self.params.height),
                 "--frames",
-                str(self.params["frames"]),
+                str(self.params.frames),
                 "--steps",
-                str(self.params["steps"]),
+                str(self.params.steps),
             ]
             if self.neg_prompt:
                 cmd += ["--neg_prompt", self.neg_prompt]
-            if self.params.get("offload"):
+            if self.params.offload:
                 cmd.append("--offload")
-            if self.params.get("t5_cpu"):
+            if self.params.t5_cpu:
                 cmd.append("--t5_cpu")
-            cmd += ["--precision", self.params.get("precision", "fp16")]
+            cmd += ["--precision", self.params.precision]
 
             # Launch process and ensure it closes properly
             with subprocess.Popen(

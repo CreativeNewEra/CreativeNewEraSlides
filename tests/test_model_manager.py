@@ -2,6 +2,7 @@ import importlib
 import pathlib
 import sys
 import types
+from dataclasses import asdict
 
 # Stub torch with minimal attributes
 class DummyOOM(RuntimeError):
@@ -54,6 +55,7 @@ sys.modules.setdefault("PyQt5", pyqt5)
 sys.modules.setdefault("PyQt5.QtCore", qtcore)
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from workers.params import ImageParams
 
 model_manager = importlib.import_module("utils.model_manager")
 
@@ -66,19 +68,25 @@ def setup_function(function):
 
 
 def test_loads_and_caches_pipeline():
-    params = {"model_path": "dummy", "device": "cpu"}
-    pipe1 = model_manager.ModelManager.get_flux_pipeline(params)
-    pipe2 = model_manager.ModelManager.get_flux_pipeline(params)
+    params = ImageParams(
+        width=1, height=1, steps=1, guidance=1, model_path="dummy", device="cpu"
+    )
+    pipe1 = model_manager.ModelManager.get_flux_pipeline(asdict(params))
+    pipe2 = model_manager.ModelManager.get_flux_pipeline(asdict(params))
     assert pipe1 is pipe2
     assert FakeStableDiffusionPipeline.from_pretrained_calls == [("dummy", "float32")]
     assert pipe1.to_calls == ["cpu"]
 
 
 def test_moves_pipeline_to_new_device():
-    params = {"model_path": "dummy", "device": "cpu"}
-    pipe1 = model_manager.ModelManager.get_flux_pipeline(params)
-    params2 = {"model_path": "dummy", "device": "cuda"}
-    pipe2 = model_manager.ModelManager.get_flux_pipeline(params2)
+    params = ImageParams(
+        width=1, height=1, steps=1, guidance=1, model_path="dummy", device="cpu"
+    )
+    pipe1 = model_manager.ModelManager.get_flux_pipeline(asdict(params))
+    params2 = ImageParams(
+        width=1, height=1, steps=1, guidance=1, model_path="dummy", device="cuda"
+    )
+    pipe2 = model_manager.ModelManager.get_flux_pipeline(asdict(params2))
     assert pipe1 is pipe2
     assert FakeStableDiffusionPipeline.from_pretrained_calls == [("dummy", "float32")]
     assert pipe1.to_calls == ["cpu", "cuda"]

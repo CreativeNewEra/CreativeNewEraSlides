@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt
 from ui.main_window import Ui_MainWindow
 from utils.settings_manager import SettingsManager
 from workers.image_and_video_workers import ImageWorker, VideoWorker
+from workers.params import ImageParams, VideoParams
 
 
 class MainController:
@@ -56,17 +57,17 @@ class MainController:
         """Gather UI inputs and launch a worker thread to generate an image."""
         prompt = self.ui.prompt_edit.toPlainText().strip()
         neg = self.ui.neg_prompt_edit.toPlainText().strip()
-        params = {
-            "width": self.ui.width_spin.value(),
-            "height": self.ui.height_spin.value(),
-            "steps": self.ui.steps_spin.value(),
-            "guidance": self.ui.guidance_spin.value(),
-            "model_path": self.settings.get_model_path("flux"),
-            "device": self.ui.device_combo.currentText(),
-            "quantized": self.ui.quant_checkbox.isChecked(),
-        }
+        params = ImageParams(
+            width=self.ui.width_spin.value(),
+            height=self.ui.height_spin.value(),
+            steps=self.ui.steps_spin.value(),
+            guidance=self.ui.guidance_spin.value(),
+            model_path=self.settings.get_model_path("flux"),
+            device=self.ui.device_combo.currentText(),
+            quantized=self.ui.quant_checkbox.isChecked(),
+        )
         # Persist chosen device
-        self.settings.set("device", params["device"])
+        self.settings.set("device", params.device)
 
         # Start worker
         self.image_worker = ImageWorker(prompt, neg, params)
@@ -97,15 +98,15 @@ class MainController:
         """Gather UI inputs and launch a worker thread to generate a video."""
         prompt = self.ui.video_prompt_edit.toPlainText().strip()
         neg = self.ui.video_neg_prompt_edit.toPlainText().strip()
-        params = {
-            "width": self.ui.video_width_spin.value(),
-            "height": self.ui.video_height_spin.value(),
-            "frames": self.ui.frames_spin.value(),
-            "steps": self.ui.video_steps_spin.value(),
-            "offload": self.ui.offload_checkbox.isChecked(),
-            "t5_cpu": self.ui.t5_cpu_checkbox.isChecked(),
-            "precision": self.ui.precision_combo.currentText(),
-        }
+        params = VideoParams(
+            width=self.ui.video_width_spin.value(),
+            height=self.ui.video_height_spin.value(),
+            frames=self.ui.frames_spin.value(),
+            steps=self.ui.video_steps_spin.value(),
+            offload=self.ui.offload_checkbox.isChecked(),
+            t5_cpu=self.ui.t5_cpu_checkbox.isChecked(),
+            precision=self.ui.precision_combo.currentText(),
+        )
 
         self.video_worker = VideoWorker(prompt, neg, params)
         self.video_worker.progress.connect(self.ui.video_progress.setValue)
