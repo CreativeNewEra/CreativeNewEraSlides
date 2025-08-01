@@ -27,7 +27,7 @@ FluxWanApp/
 ├── controllers/
 │   └── main_controller.py     # Wire UI ↔ workers
 ├── main.py                    # Entry point
-├── requirements.txt           # Python deps
+├── pyproject.toml           # Project metadata and dependencies
 ├── Dockerfile                 # Container instructions
 ├── .github/workflows/ci.yml   # CI pipeline
 ├── tests/                     # Unit tests
@@ -54,7 +54,7 @@ FluxWanApp/
 
    ```bash
    pip install --upgrade pip
-   pip install -r requirements.txt
+   pip install .[dev]
    ```
 
 3. **Set model paths** (first run will prompt you to pick local model folders)

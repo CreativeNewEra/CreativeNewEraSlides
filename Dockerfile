@@ -8,12 +8,11 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Install Python dependencies first for caching
-COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-# Copy the rest of the application code
+# Copy the application code
 COPY . .
+
+# Install Python dependencies
+RUN pip3 install --no-cache-dir .
 
 # Default command to run the application
 CMD ["python3", "main.py"]
