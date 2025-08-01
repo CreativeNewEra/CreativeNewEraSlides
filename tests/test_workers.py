@@ -220,7 +220,7 @@ def test_image_worker_stop_prevents_progress():
     worker.error = DummySignal()
 
     def on_progress(value):
-        if value:
+        if value >= 0:
             worker.stop()
 
     worker.progress.connect(on_progress)
