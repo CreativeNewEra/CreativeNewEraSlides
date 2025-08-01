@@ -109,13 +109,14 @@ sys.modules["utils.model_manager"] = fake_model_manager
 
 # ---- Import workers module ----
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+from workers.params import ImageParams, VideoParams
 workers = importlib.import_module("workers.image_and_video_workers")
 
 
 # ---- Tests for ImageWorker ----
 def test_image_worker_emits_progress_and_result():
     empty_cache.called = False
-    params = {"width": 1, "height": 1, "steps": 2, "guidance": 1}
+    params = ImageParams(width=1, height=1, steps=2, guidance=1)
     worker = workers.ImageWorker("prompt", "", params)
     worker.progress = DummySignal()
     worker.result = DummySignal()
@@ -132,13 +133,7 @@ def test_image_worker_passes_quantized_flag():
     fake_model_manager.ModelManager.get_flux_pipeline = (
         lambda params: captured_params.update(params) or FakePipeline()
     )
-    params = {
-        "width": 1,
-        "height": 1,
-        "steps": 1,
-        "guidance": 1,
-        "quantized": True,
-    }
+    params = ImageParams(width=1, height=1, steps=1, guidance=1, quantized=True)
     worker = workers.ImageWorker("prompt", "", params)
     worker.progress = DummySignal()
     worker.result = DummySignal()
@@ -155,11 +150,8 @@ def test_image_worker_emits_error_on_failure():
     fake_model_manager.ModelManager.get_flux_pipeline = (
         lambda params: BadPipeline()
     )  # noqa: E501
-    worker = workers.ImageWorker(
-        "p",
-        "",
-        {"width": 1, "height": 1, "steps": 1, "guidance": 1},
-    )
+    params = ImageParams(width=1, height=1, steps=1, guidance=1)
+    worker = workers.ImageWorker("p", "", params)
     worker.progress = DummySignal()
     worker.result = DummySignal()
     worker.error = DummySignal()
@@ -193,15 +185,15 @@ def test_video_worker_builds_command_and_emits_progress(tmp_path):
     subprocess = importlib.import_module("subprocess")
     subprocess.Popen = fake_popen
 
-    params = {
-        "width": 1,
-        "height": 1,
-        "frames": 1,
-        "steps": 1,
-        "offload": True,
-        "t5_cpu": True,
-        "precision": "fp16",
-    }
+    params = VideoParams(
+        width=1,
+        height=1,
+        frames=1,
+        steps=1,
+        offload=True,
+        t5_cpu=True,
+        precision="fp16",
+    )
     worker = workers.VideoWorker("hello", "", params)
     worker.progress = DummySignal()
     worker.finished = DummySignal()
