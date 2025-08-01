@@ -141,14 +141,16 @@ class MainController:
             self._reset_video_ui()
 
     def cancel_image_generation(self) -> None:
-        if hasattr(self, 'image_worker') and self.image_worker is not None:
-            self.image_worker.stop()
+        worker = getattr(self, 'image_worker', None)
+        if worker is not None:
+            worker.stop()
         self.ui.status_bar.showMessage("Image generation cancelled")
         self._reset_image_ui()
 
     def cancel_video_generation(self) -> None:
-        if hasattr(self, 'video_worker') and self.video_worker is not None:
-            self.video_worker.stop()
+        worker = getattr(self, 'video_worker', None)
+        if worker is not None:
+            worker.stop()
         self.ui.status_bar.showMessage("Video generation cancelled")
         self._reset_video_ui()
 
