@@ -48,8 +48,10 @@ class MainController:
     def _bind_signals(self):
         # Image generation
         self.ui.gen_button.clicked.connect(self.start_image_generation)
+        self.ui.image_cancel_button.clicked.connect(self.cancel_image_generation)
         # Video generation
         self.ui.video_button.clicked.connect(self.start_video_generation)
+        self.ui.video_cancel_button.clicked.connect(self.cancel_video_generation)
 
     def start_image_generation(self) -> None:
         """Gather UI inputs and launch a worker thread to generate an image."""
@@ -70,9 +72,12 @@ class MainController:
         self.image_worker = ImageWorker(prompt, neg, params)
         self.image_worker.progress.connect(self.ui.image_progress.setValue)
         self.image_worker.result.connect(self._on_image_result)
-        self.image_worker.error.connect(self._handle_error)
+        self.image_worker.error.connect(lambda msg: self._handle_error(msg, 'image'))
         self.image_worker.start()
 
+        self.ui.gen_button.setEnabled(False)
+        self.ui.image_cancel_button.setEnabled(True)
+        self.ui.image_progress.setValue(0)
         self.ui.status_bar.showMessage("Generating image...")
 
     def _on_image_result(self, qimg: QImage) -> None:
@@ -90,6 +95,7 @@ class MainController:
             )
         )
         self.ui.status_bar.showMessage("Image generation complete")
+        self._reset_image_ui()
 
     def start_video_generation(self) -> None:
         """Gather UI inputs and launch a worker thread to generate a video."""
@@ -108,16 +114,20 @@ class MainController:
         self.video_worker = VideoWorker(prompt, neg, params)
         self.video_worker.progress.connect(self.ui.video_progress.setValue)
         self.video_worker.finished.connect(self._on_video_finished)
-        self.video_worker.error.connect(self._handle_error)
+        self.video_worker.error.connect(lambda msg: self._handle_error(msg, 'video'))
         self.video_worker.start()
 
+        self.ui.video_button.setEnabled(False)
+        self.ui.video_cancel_button.setEnabled(True)
+        self.ui.video_progress.setValue(0)
         self.ui.status_bar.showMessage("Generating video...")
 
     def _on_video_finished(self, path: str) -> None:
         """Inform the user of the output video location."""
         self.ui.status_bar.showMessage(f"Video saved to {path}")
+        self._reset_video_ui()
 
-    def _handle_error(self, msg: str) -> None:
+    def _handle_error(self, msg: str, source: str) -> None:
         """Display an error message in the status bar.
 
         Parameters:
@@ -125,6 +135,34 @@ class MainController:
         """
         # Display errors in status bar (could be extended to dialogs)
         self.ui.status_bar.showMessage(msg)
+        if source == 'image':
+            self._reset_image_ui()
+        elif source == 'video':
+            self._reset_video_ui()
+
+    def cancel_image_generation(self) -> None:
+        if hasattr(self, 'image_worker') and self.image_worker is not None:
+            self.image_worker.stop()
+        self.ui.status_bar.showMessage("Image generation cancelled")
+        self._reset_image_ui()
+
+    def cancel_video_generation(self) -> None:
+        if hasattr(self, 'video_worker') and self.video_worker is not None:
+            self.video_worker.stop()
+        self.ui.status_bar.showMessage("Video generation cancelled")
+        self._reset_video_ui()
+
+    def _reset_image_ui(self) -> None:
+        self.ui.gen_button.setEnabled(True)
+        self.ui.image_cancel_button.setEnabled(False)
+        self.ui.image_progress.setValue(0)
+        self.image_worker = None
+
+    def _reset_video_ui(self) -> None:
+        self.ui.video_button.setEnabled(True)
+        self.ui.video_cancel_button.setEnabled(False)
+        self.ui.video_progress.setValue(0)
+        self.video_worker = None
 
 
 if __name__ == '__main__':
