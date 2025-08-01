@@ -74,6 +74,8 @@ class ImageWorker(QThread):
             self.progress.emit(0)
 
             def _callback(step, timestep, latents):
+                if not self._running:
+                    return
                 if total_steps > 0:
                     pct = min(100, int((step + 1) / total_steps * 100))
                 else:

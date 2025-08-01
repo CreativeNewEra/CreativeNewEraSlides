@@ -19,7 +19,10 @@ class MainController:
         self.window = QMainWindow()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self.window)
+        self.window.closeEvent = self.closeEvent
         self.settings = SettingsManager()
+        self.image_worker = None
+        self.video_worker = None
 
         # Populate devices and bind actions
         self._populate_device_list()
@@ -124,6 +127,14 @@ class MainController:
             path: Filesystem path where the video was saved.
         """
         self.ui.status_bar.showMessage(f"Video saved to {path}")
+
+    def closeEvent(self, event) -> None:  # type: ignore[override]
+        """Stop running workers when the window is closed."""
+        for worker in (self.image_worker, self.video_worker):
+            if worker and worker.isRunning():
+                worker.stop()
+                worker.wait()
+        event.accept()
 
     def _handle_error(self, msg: str) -> None:
         """Display an error message in the status bar.

@@ -38,6 +38,7 @@ pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")
 qtcore.QThread = QThread  # type: ignore[attr-defined]
 qtcore.pyqtSignal = DummySignal  # type: ignore[attr-defined]
+qtcore.QObject = object  # type: ignore[attr-defined]
 qtgui = types.ModuleType("PyQt5.QtGui")
 qtgui.QImage = QImage  # type: ignore[attr-defined]
 sys.modules["PyQt5"] = pyqt5
@@ -205,4 +206,69 @@ def test_video_worker_builds_command_and_emits_progress(tmp_path):
     assert "--t5_cpu" in cmd
     assert worker.progress.emitted == [10, 100]
     assert worker.finished.emitted == [os.path.abspath("output.mp4")]
+    assert worker.error.emitted == []
+
+
+def test_image_worker_stop_prevents_progress():
+    fake_model_manager.ModelManager.get_flux_pipeline = (
+        lambda params: FakePipeline()
+    )
+    params = ImageParams(width=1, height=1, steps=2, guidance=1)
+    worker = workers.ImageWorker("prompt", "", params)
+    worker.progress = DummySignal()
+    worker.result = DummySignal()
+    worker.error = DummySignal()
+
+    def on_progress(value):
+        if value:
+            worker.stop()
+
+    worker.progress.connect(on_progress)
+    workers.ImageWorker.run(worker)
+    assert worker.progress.emitted == [0, 50]
+    assert worker.result.emitted == []
+    assert worker.error.emitted == []
+
+
+def test_video_worker_stop_prevents_progress():
+    def fake_popen(cmd, stdout, stderr, text):
+        class Proc:
+            returncode = 0
+            stdout = ["Progress: 10%\n", "Progress: 100%\n"]
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def kill(self):
+                pass
+
+        return Proc()
+
+    subprocess = importlib.import_module("subprocess")
+    subprocess.Popen = fake_popen
+
+    params = VideoParams(
+        width=1,
+        height=1,
+        frames=1,
+        steps=1,
+        offload=False,
+        t5_cpu=False,
+        precision="fp16",
+    )
+    worker = workers.VideoWorker("p", "", params)
+    worker.progress = DummySignal()
+    worker.finished = DummySignal()
+    worker.error = DummySignal()
+
+    def on_progress(value):
+        worker.stop()
+
+    worker.progress.connect(on_progress)
+    workers.VideoWorker.run(worker)
+    assert worker.progress.emitted == [10]
+    assert worker.finished.emitted == []
     assert worker.error.emitted == []
