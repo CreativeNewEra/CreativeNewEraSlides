@@ -128,7 +128,7 @@ class MainController:
         """
         self.ui.status_bar.showMessage(f"Video saved to {path}")
 
-    def closeEvent(self, event) -> None:  # type: ignore[override]
+    def closeEvent(self, event: QCloseEvent) -> None:
         """Stop running workers when the window is closed."""
         for worker in (self.image_worker, self.video_worker):
             if worker and worker.isRunning():
