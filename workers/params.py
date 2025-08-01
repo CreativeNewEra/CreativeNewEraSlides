@@ -10,6 +10,7 @@ class ImageParams:
     height: int
     steps: int
     guidance: float
+    # Path to the model file or directory used for image generation.
     model_path: Optional[str] = None
     device: str = "cpu"
     quantized: bool = False
