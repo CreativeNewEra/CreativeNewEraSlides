@@ -177,7 +177,6 @@ class VideoWorker(QThread):
                 stderr=subprocess.STDOUT,
                 text=True,
             ) as proc:
-                assert proc.stdout is not None
                 # Parse stdout for progress updates
                 for line in proc.stdout:
                     if not self._running:
