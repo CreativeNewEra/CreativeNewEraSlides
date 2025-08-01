@@ -142,3 +142,8 @@ See `.github/workflows/ci.yml` for automated lint, type-check, tests, and build 
 
 Enjoy generating awesome imagery and videos—let creativity flow! 🚀
 
+
+## 📝 License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+
