@@ -14,7 +14,16 @@ dist/
 env/
 .venv/
 
+# Testing and coverage
+.pytest_cache/
+.mypy_cache/
+.coverage
+
+# IDE settings
+.vscode/
+
 # Misc
 *.log
 *.pptx
 *.png
+*.mp4
