@@ -4,33 +4,41 @@ import sys
 import types
 from dataclasses import asdict
 
+
 # Stub torch with minimal attributes
 class DummyOOM(RuntimeError):
     pass
 
+
 fake_torch = types.SimpleNamespace(
     float16="float16",
     float32="float32",
-    cuda=types.SimpleNamespace(OutOfMemoryError=DummyOOM)
+    cuda=types.SimpleNamespace(OutOfMemoryError=DummyOOM),
 )
 sys.modules["torch"] = fake_torch
+
 
 # Stub diffusers StableDiffusionPipeline
 class FakePipe:
     def __init__(self):
         self.to_calls = []
+
     def to(self, device):
         self.to_calls.append(device)
         return self
+
     def __call__(self, *args, **kwargs):
         return types.SimpleNamespace(images=[])
 
+
 class FakeStableDiffusionPipeline:
     from_pretrained_calls = []
+
     @classmethod
     def from_pretrained(cls, model_path, torch_dtype):
         cls.from_pretrained_calls.append((model_path, torch_dtype))
         return FakePipe()
+
 
 fake_diffusers = types.ModuleType("diffusers")
 fake_diffusers.StableDiffusionPipeline = FakeStableDiffusionPipeline
@@ -39,6 +47,7 @@ sys.modules.setdefault("diffusers", fake_diffusers)
 # Stub PyQt5 for SettingsManager
 pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")
+
 
 class FakeQSettings:
     def __init__(self, *args, **kwargs):
@@ -49,6 +58,7 @@ class FakeQSettings:
 
     def setValue(self, key, value):
         pass
+
 
 qtcore.QSettings = FakeQSettings
 sys.modules.setdefault("PyQt5", pyqt5)

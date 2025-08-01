@@ -1,5 +1,6 @@
 import torch
 
+
 def parse_error(exc: Exception) -> str:
     """
     Interpret common exceptions and return user-friendly messages.
@@ -14,7 +15,7 @@ def parse_error(exc: Exception) -> str:
 
     # Torch / CUDA OOM
     msg = str(exc)
-    if 'out of memory' in msg.lower() or isinstance(exc, torch.cuda.OutOfMemoryError):
+    if "out of memory" in msg.lower() or isinstance(exc, torch.cuda.OutOfMemoryError):
         return "CUDA out of memory. Try lowering resolution or steps, or switch to CPU."
 
     # Wan CLI failures

@@ -3,14 +3,18 @@ import pathlib
 import sys
 import types
 
+
 # Stub QSettings with in-memory dictionary
 class FakeQSettings:
     def __init__(self, *args, **kwargs):
         self.store = {}
+
     def value(self, key, default=None):
         return self.store.get(key, default)
+
     def setValue(self, key, value):
         self.store[key] = value
+
 
 pyqt5 = types.ModuleType("PyQt5")
 qtcore = types.ModuleType("PyQt5.QtCore")

@@ -89,6 +89,8 @@ class QTextEdit:
 
     def trackHistory(self):
         self.history.append(self.text)
+
+
 class QSpinBox:
     def __init__(self, value=0):
         self._value = value
@@ -144,6 +146,7 @@ class QImage:
 
 class QCloseEvent:
     pass
+
 
 sys.modules["PyQt5.QtGui.QCloseEvent"] = QCloseEvent
 pyqt5 = types.ModuleType("PyQt5")
@@ -269,6 +272,7 @@ class DummyImageWorker:
             from dataclasses import asdict
             from utils.model_manager import ModelManager
             import torch
+
             pipe = ModelManager.get_flux_pipeline(asdict(self.params))
             self.progress.emit(0)
             total = self.params.steps
@@ -354,7 +358,9 @@ class DummyVideoWorker:
             if self._running:
                 if proc.returncode != 0:
                     raise RuntimeError(f"Wan2.2 failed with code {proc.returncode}")
-                with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as temp_file:
+                with tempfile.NamedTemporaryFile(
+                    suffix=".mp4", delete=False
+                ) as temp_file:
                     out_file = temp_file.name
                 self.finished.emit(out_file)
         except Exception as e:

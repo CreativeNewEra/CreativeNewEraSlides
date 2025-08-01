@@ -1,6 +1,16 @@
 from PyQt5.QtWidgets import (
-    QMainWindow, QWidget, QTabWidget, QTextEdit, QLabel, QSpinBox,
-    QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox, QPushButton, QProgressBar
+    QMainWindow,
+    QWidget,
+    QTabWidget,
+    QTextEdit,
+    QLabel,
+    QSpinBox,
+    QHBoxLayout,
+    QVBoxLayout,
+    QCheckBox,
+    QComboBox,
+    QPushButton,
+    QProgressBar,
 )
 from PyQt5 import QtCore
 

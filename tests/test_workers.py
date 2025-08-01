@@ -111,6 +111,7 @@ sys.modules["utils.model_manager"] = fake_model_manager
 # ---- Import workers module ----
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 from workers.params import ImageParams, VideoParams
+
 workers = importlib.import_module("workers.image_and_video_workers")
 
 
@@ -210,9 +211,7 @@ def test_video_worker_builds_command_and_emits_progress(tmp_path):
 
 
 def test_image_worker_stop_prevents_progress():
-    fake_model_manager.ModelManager.get_flux_pipeline = (
-        lambda params: FakePipeline()
-    )
+    fake_model_manager.ModelManager.get_flux_pipeline = lambda params: FakePipeline()
     params = ImageParams(width=1, height=1, steps=2, guidance=1)
     worker = workers.ImageWorker("prompt", "", params)
     worker.progress = DummySignal()

@@ -151,40 +151,47 @@ class VideoWorker(QThread):
         """Execute video generation using Wan2.2 and emit signals."""
         try:
             from utils.model_manager import ModelManager
-            
+
             # Check if Wan2.2 model exists
             wan_model_path = ModelManager.get_wan_model_path()
             if not os.path.exists(wan_model_path):
                 raise FileNotFoundError(f"Wan2.2 model not found at {wan_model_path}")
-            
+
             # Look for inference script in the model directory
             inference_script = None
             possible_scripts = [
                 os.path.join(wan_model_path, "inference.py"),
-                os.path.join(wan_model_path, "sample.py"),  
+                os.path.join(wan_model_path, "sample.py"),
                 os.path.join(wan_model_path, "generate.py"),
-                os.path.join(wan_model_path, "run_inference.py")
+                os.path.join(wan_model_path, "run_inference.py"),
             ]
-            
+
             for script in possible_scripts:
                 if os.path.exists(script):
                     inference_script = script
                     break
-            
+
             if not inference_script:
-                raise FileNotFoundError(f"No inference script found in {wan_model_path}")
-            
+                raise FileNotFoundError(
+                    f"No inference script found in {wan_model_path}"
+                )
+
             # Build command to run the Python script
             cmd = [
-                "python", 
+                "python",
                 inference_script,
-                "--prompt", self.prompt,
-                "--width", str(self.params.width),
-                "--height", str(self.params.height), 
-                "--frames", str(self.params.frames),
-                "--steps", str(self.params.steps),
+                "--prompt",
+                self.prompt,
+                "--width",
+                str(self.params.width),
+                "--height",
+                str(self.params.height),
+                "--frames",
+                str(self.params.frames),
+                "--steps",
+                str(self.params.steps),
             ]
-            
+
             if self.neg_prompt:
                 cmd += ["--neg_prompt", self.neg_prompt]
             if self.params.offload:
