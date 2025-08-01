@@ -2,18 +2,72 @@ version: 2
 
 # Dependabot helps keep your dependencies up to date and secure by
 # automatically creating pull requests for outdated or vulnerable
-# packages. Here we configure it to monitor both
-# Python and GitHub Actions dependencies.
+# packages. Here we configure it to monitor Python, GitHub Actions,
+# and Docker dependencies with advanced grouping and scheduling.
 updates:
-  # Monitor Python dependencies defined in requirements.txt
-  - package-ecosystem: pip
+  # Monitor Python dependencies
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
     open-pull-requests-limit: 5
+    reviewers:
+      - "CreativeNewEra"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      development-dependencies:
+        patterns:
+          - "pytest*"
+          - "black*"
+          - "flake8*"
+          - "mypy*"
+          - "pre-commit*"
+          - "safety*"
+          - "bandit*"
+      ai-dependencies:
+        patterns:
+          - "torch*"
+          - "diffusers*"
+          - "transformers*"
+          - "accelerate*"
+      ui-dependencies:
+        patterns:
+          - "PyQt5*"
+    ignore:
+      # Ignore major version updates for stable dependencies
+      - dependency-name: "PyQt5"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "torch"
+        update-types: ["version-update:semver-major"]
 
-  # Monitor GitHub Actions used in this repository
-  - package-ecosystem: github-actions
+  # Monitor GitHub Actions
+  - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "CreativeNewEra"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Monitor Docker dependencies
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+    open-pull-requests-limit: 2
+    reviewers:
+      - "CreativeNewEra"
+    commit-message:
+      prefix: "docker"
+      include: "scope"

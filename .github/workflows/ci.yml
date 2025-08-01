@@ -2,30 +2,104 @@ name: CI
 
 on:
   push:
+    branches: [ main, develop ]
   pull_request:
+    branches: [ main ]
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8, 3.9, "3.10", "3.11"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xvfb
+    
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install .[dev]
+    
+    - name: Code formatting check
+      run: black --check .
+    
+    - name: Linting
+      run: flake8 .
+    
+    - name: Type checking
+      run: mypy --ignore-missing-imports .
+    
+    - name: Run tests
+      run: |
+        # Run tests in headless mode for PyQt5
+        xvfb-run -a pytest --maxfail=1 --disable-warnings -q
+    
+    - name: Upload coverage reports
+      if: matrix.python-version == '3.9'
+      uses: codecov/codecov-action@v3
+      with:
+        fail_ci_if_error: false
+
+  security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install .[dev]
-      - name: Lint
-        run: |
-          black --check .
-          flake8 .
-      - name: Type check
-        run: |
-          mypy --ignore-missing-imports .
-      - name: Test
-        run: |
-          pytest --maxfail=1 --disable-warnings -q
-      - name: Build Docker image
-        run: |
-          docker build -t fluxwanapp .
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install safety bandit[toml]
+    
+    - name: Security audit - Safety
+      run: safety check --json
+      continue-on-error: true
+    
+    - name: Security audit - Bandit
+      run: bandit -r . -f json
+      continue-on-error: true
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install build
+    
+    - name: Build package
+      run: python -m build
+    
+    - name: Build Docker image
+      run: docker build -t fluxwanapp .
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: dist-packages
+        path: dist/
