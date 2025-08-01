@@ -97,6 +97,26 @@ Generated images are saved to your configured output directory as:
 flux_YYYYMMDD_HHMMSS.png
 ```
 
+## 🔁 Pre-commit
+
+Install git hooks to automatically run linters and type checks before each commit:
+
+```bash
+pre-commit install
+```
+
+Run checks on staged files:
+
+```bash
+pre-commit run --files <file1> [<file2> ...]
+```
+
+Run against the entire codebase:
+
+```bash
+pre-commit run --all-files
+```
+
 ## 🧪 Testing & Linting
 
 ```bash
