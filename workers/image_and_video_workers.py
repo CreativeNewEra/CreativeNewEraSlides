@@ -114,7 +114,7 @@ class VideoWorker(QThread):
 
     progress = pyqtSignal(int)
     finished = pyqtSignal(str)  # emits output file path
-    error = pyqtSignal()
+    error = pyqtSignal(str)
 
     def __init__(
         self,
