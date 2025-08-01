@@ -1,0 +1,140 @@
+Optimising Image (Flux) and Video (Wan 2.2) Generation on a 16 GB‑VRAM Laptop
+1 Background – Why Flux and Wan 2.2 are demanding
+Flux.1 is a series of text‑to‑image diffusion transformer models that use a CLIP and T5 encoder plus a very large 2‑D transformer (MMDiT). Loading the full model with FP32 weights requires ≈50 GB of RAM/VRAM
+huggingface.co
+, so memory‑saving strategies are necessary.
+Wan 2.2 is an advanced text‑to‑video model using a Mixture‑of‑Experts (MoE) architecture: only part of its 27 billion parameters is active at each step, providing cinematic motion and better composition without greatly increasing compute
+comfyuiweb.com
+. There are three variants: T2V‑A14B and I2V‑A14B (14 B parameters) that require multi‑GPU setups for 480/720 p videos and TI2V‑5B, a 5 B model designed for consumer GPUs that can generate ≈5 s 720 p video in ~9 min on an RTX 4090
+comfyuiweb.com
+blog.fal.ai
+.
+
+Our goal is to build an offline app that runs these models on a 16 GB VRAM / 32 GB RAM laptop (Nobara Linux) while maximising quality and speed.
+
+2 Memory‑saving techniques for Flux.1
+Flux’s diffusers documentation outlines several optimisation techniques
+huggingface.co
+huggingface.co
+. The most important for a 16 GB VRAM laptop are:
+
+2.1 Offloading and slicing
+Group/leaf‑level offloading. apply_group_offloading transfers the weights of different sub‑modules (transformer, text encoders, VAE) to CPU memory and loads them back to GPU only when needed. Using the leaf_level option and enabling asynchronous streams reduces VRAM consumption
+huggingface.co
+.
+
+Sequential CPU offload (enable_sequential_cpu_offload) and model CPU offload (enable_model_cpu_offload) move entire modules to the CPU after each forward pass; this is slower but allows running Flux on GPUs with only ~8 GB of memory
+huggingface.co
+.
+
+VAE slicing/tiling. The decoder can be configured to process latent images in tiles rather than loading the entire latent into memory. vae.enable_slicing() and vae.enable_tiling() reduce memory consumption at the cost of some speed
+huggingface.co
+.
+
+2.2 Lower precision and quantisation
+bfloat16/FP16: Running the pipeline with torch_dtype=torch.bfloat16 or casting to FP16 reduces memory. However, some activations in the text encoders must remain in FP32 to avoid output differences; thus pipe.to(torch.float16) is applied after loading and enable_sequential_cpu_offload() is enabled
+huggingface.co
+.
+
+8‑bit and 4‑bit quantisation with bitsandbytes. Loading the T5 text encoder and/or the transformer using bitsandbytes reduces memory by up to 90 %
+analyticsvidhya.com
+. The Analytics Vidhya guide demonstrates how to load the T5 encoder in 4‑bit mode (hf-internal-testing/flux.1-dev-nf4-pkg) and then load the transformer and VAE in 4 bits
+analyticsvidhya.com
+. After encoding the prompt, the pipeline is loaded with transformer=transformer_4bit and text_encoder_2=text_encoder_2_4bit and CPU offloading is enabled, allowing image generation on an 8 GB GPU
+analyticsvidhya.com
+. Bitsandbytes quantisation trades some latency for drastically lower memory requirements.
+
+FP8 using optimum‑quanto. The diffusers documentation shows that loading the transformer and T5 encoder as FP8 weights (quantised with optimum‑quanto) and freezing the modules allows the model to run on less than 16 GB VRAM
+huggingface.co
+.
+
+2.3 Model selection and LoRA support
+Flux variants: FLUX.1-dev (guidance‑distilled) produces high‑quality images but uses the full transformer; FLUX.1-schnell (timestep‑distilled) is smaller and faster at the cost of some detail. On a 16 GB GPU, using schnell or quantised dev reduces memory stress.
+
+ControlNet/LoRA: The ComfyUI guide lists nodes (FluxGuidance, UNETLoader, etc.) for combining LoRAs and ControlNet
+comfyui.org
+. LoRA weights add minimal memory overhead and can be loaded on the fly.
+
+2.4 Recommended pipeline settings
+Resolution: 576×1024 or 640×1152 for portrait, 768×768 for square images. The diffusers doc defaults to 1024 but a 16 GB GPU may require reducing to 768 or 512 for FP16/quantised models.
+
+Steps and guidance: around 20–30 inference steps and a guidance scale of 3–5 produce good quality with manageable computation
+comfyui.org
+.
+
+Prompt encoding: encode both CLIP and T5 prompts (prompt_2) for improved prompt fidelity. Negative prompts or negative prompts 2 can help avoid unwanted artefacts.
+
+3 Optimising Wan 2.2 video generation
+3.1 Model variant selection
+For a single‑GPU laptop, the TI2V‑5B variant of Wan 2.2 is the only practical option. It compresses the model to ~5 B parameters using the Wan 2.2 VAE and Mixture‑of‑Experts and can run 720 p @ 24 fps on consumer GPUs
+comfyuiweb.com
+blog.fal.ai
+. The T2V‑A14B and I2V‑A14B variants require at least 80 GB VRAM for 480/720 p and thus are unsuitable
+comfyuiweb.com
+.
+
+3.2 Memory‑saving flags and settings
+The Wan 2.2 repository provides CLI flags for reducing memory usage during video generation:
+
+--offload_model True: offloads part of the model to CPU during sampling. Combining this with the 5 B variant allows generation on GPUs with ~16 GB VRAM
+comfyuiweb.com
+.
+
+--convert_model_dtype bfloat16 or --convert_model_dtype fp8: loads weights in a lower precision for reduced memory and faster inference
+comfyui.org
+.
+
+--t5_cpu: forces the T5 text encoder onto the CPU; the model uses a single CLIP text encoder for prompts and runs T5 on CPU to save VRAM
+comfyuiweb.com
+.
+
+--enable_parallel_decode: decodes frames in parallel; this increases speed but requires additional memory, so it should be disabled on 16 GB VRAM.
+
+--bf16 flag is recommended when running with bfloat16, though FP16 is also acceptable if supported by the GPU.
+
+3.3 Pipeline design
+A typical Wan 2.2 text‑to‑video pipeline (as used in ComfyUI) involves the following stages
+comfyui.org
+:
+
+Prompt encoding using WanVideoTextEncode and (optionally) WanVideoImageClipEncode when starting from an image (I2V). Setting negative prompts helps refine motion.
+
+Latent initialization: WanVideoModelLoader loads the TI2V‑5B model; an empty latent video of desired resolution/frames is created.
+
+Video sampling: WanVideoSampler denoises the latent using the MoE transformer. The number of steps (typically 6–8) and frames (10–20) control quality and speed. The offload_model and precision flags are applied here.
+
+Decoding: WanVideoDecode reconstructs each frame from latents using the Wan 2.2 VAE, which compresses latents by 16×16×4 and can patchify up to 32×32×4 for higher resolution
+comfyuiweb.com
+.
+
+Video assembly: frames are stitched into an MP4 (e.g., using VHS_VideoCombine in ComfyUI), often at 16 fps for short clips
+comfyui.org
+.
+
+3.4 Recommended settings for 16 GB VRAM
+Resolution: 480×480 or 640×360 for square/landscape; 720 p may run but may require disabling parallel decode and reducing steps.
+
+Frames and duration: 10–12 frames at 16–24 fps yield 0.5–0.7 s of video; to approximate 5 s, use frames=10 and fps=24 repeated or use interpolation outside the pipeline. Generating longer clips on limited VRAM drastically increases memory usage due to the need to store all latent frames.
+
+Inference steps: 6–8 for acceptable quality; more steps improve quality but increase computation. SNR switching and high‑noise experts in Wan 2.2 produce sharper motion with fewer steps
+blog.fal.ai
+.
+
+Prompts: Write a strong descriptive prompt (e.g., “a cinematic shot of a tranquil forest at dusk, gentle camera pan, realistic lighting”) and an optional secondary prompt to influence camera motion.
+
+4 Proposed Desktop Application
+4.1 Architecture
+The application uses PyQt 5 (or PySide 6) for the GUI and runs generation tasks asynchronously using Python threads. The UI offers separate panels for image generation (Flux) and video generation (Wan) with inputs for prompts and parameters. Key design points:
+
+Model selection: users download the required weights once and specify their paths in a settings dialog. The app loads FLUX.1-schnell or FLUX.1-dev with optional 4‑bit/8‑bit quantisation using bitsandbytes, and Wan2.2-TI2V-5B for video.
+
+Image generation workflow: the app uses diffusers’ FluxPipeline. It applies leaf‑level offloading to the transformer, text encoders and VAE
+huggingface.co
+. Users can choose whether to enable quantisation (by loading pre‑quantised checkpoints), bfloat16/FP16 precision, and VAE slicing. The generation runs in a worker thread; intermediate progress can be emitted after each sampling step. The result is displayed in the UI and can be saved.
+
+Video generation workflow: when the user selects the video tab, the app builds a command for the Wan 2.2 CLI script (or the diffusers pipeline if available). It passes the prompt, negative prompt, resolution, frames, steps, and flags (--offload_model, --convert_model_dtype, --t5_cpu). The process is run via subprocess.Popen, capturing progress from stdout. When finished, the MP4 is displayed (embedded using Qt’s video widget) and saved.
+
+Resource management: between runs, the app clears CUDA caches (torch.cuda.empty_cache()), deletes pipelines and calls gc.collect() to free memory. It warns the user if the requested resolution or frame count exceeds memory limits.
+
+Cross‑platform packaging: the code uses pure Python and can be packaged with PyInstaller for a self‑contained executable on Nobara Linux.
+

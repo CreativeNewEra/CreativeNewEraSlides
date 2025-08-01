@@ -1,7 +1,7 @@
 import sys
 import torch
 from PyQt5.QtWidgets import QApplication, QMainWindow
-from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtGui import QPixmap, QImage, QCloseEvent
 from PyQt5.QtCore import Qt
 
 from ui.main_window import Ui_MainWindow

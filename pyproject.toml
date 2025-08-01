@@ -5,11 +5,11 @@ description = "Creative New Era Slides"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [
-    "PyQt5==5.15.13",
-    "diffusers==0.34.0",
-    "torch==2.0.1",
-    "transformers==4.34.0",
-    "accelerate==1.9.0",
+    "PyQt5>=5.15.0",
+    "diffusers>=0.30.0",
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "accelerate>=0.20.0",
 ]
 
 [project.optional-dependencies]

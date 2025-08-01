@@ -148,29 +148,52 @@ class VideoWorker(QThread):
         self._running = True
 
     def run(self) -> None:
-        """Execute video generation using the Wan2.2 CLI and emit signals."""
+        """Execute video generation using Wan2.2 and emit signals."""
         try:
-            # Build CLI command
-            cmd = [
-                "wan2.2",
-                "--prompt",
-                self.prompt,
-                "--width",
-                str(self.params.width),
-                "--height",
-                str(self.params.height),
-                "--frames",
-                str(self.params.frames),
-                "--steps",
-                str(self.params.steps),
+            from utils.model_manager import ModelManager
+            
+            # Check if Wan2.2 model exists
+            wan_model_path = ModelManager.get_wan_model_path()
+            if not os.path.exists(wan_model_path):
+                raise FileNotFoundError(f"Wan2.2 model not found at {wan_model_path}")
+            
+            # Look for inference script in the model directory
+            inference_script = None
+            possible_scripts = [
+                os.path.join(wan_model_path, "inference.py"),
+                os.path.join(wan_model_path, "sample.py"),  
+                os.path.join(wan_model_path, "generate.py"),
+                os.path.join(wan_model_path, "run_inference.py")
             ]
+            
+            for script in possible_scripts:
+                if os.path.exists(script):
+                    inference_script = script
+                    break
+            
+            if not inference_script:
+                raise FileNotFoundError(f"No inference script found in {wan_model_path}")
+            
+            # Build command to run the Python script
+            cmd = [
+                "python", 
+                inference_script,
+                "--prompt", self.prompt,
+                "--width", str(self.params.width),
+                "--height", str(self.params.height), 
+                "--frames", str(self.params.frames),
+                "--steps", str(self.params.steps),
+            ]
+            
             if self.neg_prompt:
                 cmd += ["--neg_prompt", self.neg_prompt]
             if self.params.offload:
-                cmd.append("--offload")
+                cmd.append("--offload_model")  # Common flag name
             if self.params.t5_cpu:
                 cmd.append("--t5_cpu")
-            cmd += ["--precision", self.params.precision]
+            cmd += ["--convert_model_dtype", self.params.precision]
+
+            logger.info(f"Running Wan2.2 inference: {' '.join(cmd)}")
 
             # Launch process and ensure it closes properly
             with subprocess.Popen(
@@ -178,6 +201,7 @@ class VideoWorker(QThread):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
+                cwd=wan_model_path,  # Run from model directory
             ) as proc:
                 # Parse stdout for progress updates
                 for line in proc.stdout:
