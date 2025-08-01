@@ -32,7 +32,7 @@ class ImageWorker(QThread):
     """
 
     progress = pyqtSignal(int)  # emits percentage progress
-    result = pyqtSignal()  # emits final image
+    result = pyqtSignal(QImage)  # emits final image
     error = pyqtSignal()  # emits error message
 
     def __init__(
