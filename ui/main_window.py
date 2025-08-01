@@ -73,7 +73,12 @@ class Ui_MainWindow(object):
         options_layout.addWidget(QLabel("Device:"))
         options_layout.addWidget(self.device_combo)
         # Generate controls
+        image_button_layout = QHBoxLayout()
         self.gen_button = QPushButton("Generate Image")
+        self.image_cancel_button = QPushButton("Cancel")
+        self.image_cancel_button.setEnabled(False)
+        image_button_layout.addWidget(self.gen_button)
+        image_button_layout.addWidget(self.image_cancel_button)
         self.image_progress = QProgressBar()
         self.image_display = QLabel()
         self.image_display.setAlignment(QtCore.Qt.AlignCenter)
@@ -85,7 +90,7 @@ class Ui_MainWindow(object):
         image_layout.addWidget(self.neg_prompt_edit)
         image_layout.addLayout(params_layout)
         image_layout.addLayout(options_layout)
-        image_layout.addWidget(self.gen_button)
+        image_layout.addLayout(image_button_layout)
         image_layout.addWidget(self.image_progress)
         image_layout.addWidget(self.image_display)
 
@@ -138,7 +143,12 @@ class Ui_MainWindow(object):
         video_options_layout.addWidget(QLabel("Precision:"))
         video_options_layout.addWidget(self.precision_combo)
         # Generate controls
+        video_button_layout = QHBoxLayout()
         self.video_button = QPushButton("Generate Video")
+        self.video_cancel_button = QPushButton("Cancel")
+        self.video_cancel_button.setEnabled(False)
+        video_button_layout.addWidget(self.video_button)
+        video_button_layout.addWidget(self.video_cancel_button)
         self.video_progress = QProgressBar()
         # Video display placeholder
         self.video_display = QLabel()
@@ -151,7 +161,7 @@ class Ui_MainWindow(object):
         video_layout.addWidget(self.video_neg_prompt_edit)
         video_layout.addLayout(video_params_layout)
         video_layout.addLayout(video_options_layout)
-        video_layout.addWidget(self.video_button)
+        video_layout.addLayout(video_button_layout)
         video_layout.addWidget(self.video_progress)
         video_layout.addWidget(self.video_display)
 

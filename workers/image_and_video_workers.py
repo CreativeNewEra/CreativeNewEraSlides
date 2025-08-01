@@ -7,6 +7,11 @@ import torch
 from PIL import Image
 
 
+class GenerationStopped(Exception):
+    """Internal exception to break out of generation loops."""
+    pass
+
+
 def pil_to_qimage(pil_image: Image.Image) -> QImage:
     """
     Convert PIL Image to QImage for Qt display.
@@ -22,9 +27,18 @@ class ImageWorker(QThread):
     """
     QThread worker to run Flux image generation without blocking UI.
     """
-    progress = pyqtSignal(int)          # emits percentage progress
-    result = pyqtSignal(QImage)         # emits final image
-    error  = pyqtSignal(str)            # emits error message
+    try:
+        progress = pyqtSignal(int)          # emits percentage progress
+    except TypeError:
+        progress = pyqtSignal()
+    try:
+        result = pyqtSignal(QImage)         # emits final image
+    except TypeError:
+        result = pyqtSignal()
+    try:
+        error = pyqtSignal(str)             # emits error message
+    except TypeError:
+        error = pyqtSignal()
 
     def __init__(self, prompt: str, neg_prompt: str, params: dict, parent=None):
         super().__init__(parent)
@@ -44,6 +58,8 @@ class ImageWorker(QThread):
             self.progress.emit(0)
 
             def _callback(step, timestep, latents):
+                if not self._running:
+                    raise GenerationStopped()
                 if total_steps > 0:
                     pct = min(100, int((step + 1) / total_steps * 100))
                 else:
@@ -65,6 +81,8 @@ class ImageWorker(QThread):
             pil_img = out.images[0]
             qimg = pil_to_qimage(pil_img)
             self.result.emit(qimg)
+        except GenerationStopped:
+            pass
         except Exception as e:
             # Parse and emit user-friendly error
             from utils.errors import parse_error
@@ -90,9 +108,18 @@ class VideoWorker(QThread):
     """
     QThread worker to run Wan2.2 video generation via CLI.
     """
-    progress = pyqtSignal(int)
-    finished = pyqtSignal(str)          # emits output file path
-    error    = pyqtSignal(str)
+    try:
+        progress = pyqtSignal(int)
+    except TypeError:
+        progress = pyqtSignal()
+    try:
+        finished = pyqtSignal(str)          # emits output file path
+    except TypeError:
+        finished = pyqtSignal()
+    try:
+        error = pyqtSignal(str)
+    except TypeError:
+        error = pyqtSignal()
 
     def __init__(self, prompt: str, neg_prompt: str, params: dict, parent=None):
         super().__init__(parent)
@@ -100,6 +127,7 @@ class VideoWorker(QThread):
         self.neg_prompt = neg_prompt
         self.params = params
         self._running = True
+        self._proc = None
 
     def run(self):
         try:
@@ -124,6 +152,7 @@ class VideoWorker(QThread):
             with subprocess.Popen(
                 cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
             ) as proc:
+                self._proc = proc
                 # Parse stdout for progress updates
                 for line in proc.stdout:
                     if not self._running:
@@ -146,6 +175,13 @@ class VideoWorker(QThread):
             from utils.errors import parse_error
             msg = parse_error(e)
             self.error.emit(msg)
+        finally:
+            self._proc = None
 
     def stop(self):
         self._running = False
+        if self._proc is not None:
+            try:
+                self._proc.kill()
+            except Exception:
+                pass
